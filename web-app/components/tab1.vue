@@ -46,7 +46,7 @@
               hide-details
               outlined
               v-model="accelerationX"
-              label="accelerationX"
+              label="X-acceleration"
               dense
             />
           </v-col>
@@ -57,7 +57,7 @@
               hide-details
               outlined
               v-model="accelerationY"
-              label="accelerationY"
+              label="Y-acceleration"
               dense
             />
           </v-col>
@@ -68,7 +68,7 @@
               hide-details
               outlined
               v-model="accelerationZ"
-              label="accelerationZ"
+              label="Z-acceleration"
               dense
             />
           </v-col>
@@ -197,18 +197,6 @@ export default {
       this.accelerationX = event.acceleration.x;
       this.accelerationY = event.acceleration.y;
       this.accelerationZ = event.acceleration.z;
-    },
-    formatNumber(input) {
-      let rounded = Math.round(input).toFixed(0);
-      if (rounded < 9 && rounded >= 0) return "+00" + rounded;
-      if (rounded < 99 && rounded >= 0) return "+0" + rounded;
-      if (rounded < 999 && rounded >= 0) return "+" + rounded;
-
-      if (rounded > -9) return "-00" + rounded.split("-")[1];
-      if (rounded > -99) return "-0" + rounded.split("-")[1];
-      if (rounded > -999) return "-" + rounded.split("-")[1];
-
-      return rounded;
     }
   }
 };

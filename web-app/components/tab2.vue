@@ -2,9 +2,7 @@
   <div style="font-family: monospace, monospace">
     <v-card outlined style="background-color: #f8f8f8">
       <v-card-title style="margin-bottom: -16px">Time frame (20sec.)</v-card-title>
-      <v-card-text>
-        
-      </v-card-text>
+      <v-card-text>hi</v-card-text>
     </v-card>
     <br />
 
