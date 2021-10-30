@@ -22,7 +22,7 @@
               hide-details
               outlined
               v-model="beta"
-              label="alpha"
+              label="beta"
               dense
             />
           </v-col>
@@ -33,7 +33,7 @@
               hide-details
               outlined
               v-model="gamma"
-              label="alpha"
+              label="gamma"
               dense
             />
           </v-col>
@@ -91,7 +91,7 @@
         <br />
         <v-select
           style="background-color: #fff"
-          :items="['running', 'standing', 'walking']"
+          :items="possibleActivities"
           hide-details
           v-model="currentActivity"
           outlined
@@ -144,7 +144,8 @@ export default {
       currentlyRecoding: false,
       currentHumanId: "",
       showCSV: false,
-      csvData: "activity,alpha,beta,gamma,stamp,x,y,z"
+      csvData: "activity,alpha,beta,gamma,stamp,x,y,z",
+      possibleActivities: ["tableUp", "tableDown", "hands", "walking"]
     };
   },
   mounted() {
@@ -166,13 +167,14 @@ export default {
 
       this.csvData += "\n";
       this.csvData += this.currentActivity + ";";
+      this.csvData += this.currentHumanId + ";";
+      this.csvData += new Date().getTime() + ";";
       this.csvData += this.alpha + ";";
       this.csvData += this.beta + ";";
       this.csvData += this.gamma + ";";
       this.csvData += this.accelerationX + ";";
       this.csvData += this.accelerationY + ";";
       this.csvData += this.accelerationZ + ";";
-      this.csvData += new Date().getTime() + ";";
     },
     executeNextTimer() {
       if (this.currentlyRecoding) {
@@ -187,16 +189,16 @@ export default {
     handleAngleChange(event) {
       //console.log(event);
       if (event === undefined) return;
-      this.alpha = event.alpha;
-      this.beta = event.beta;
-      this.gamma = event.gamma;
+      this.alpha = +(Math.round(event.alpha + "e+2") + "e-2");
+      this.beta = +(Math.round(event.beta + "e+2") + "e-2");
+      this.gamma = +(Math.round(event.gamma + "e+2") + "e-2");
     },
     handleGyroChange(event) {
       //console.log(event.acceleration);
       if (event === undefined || event.acceleration === undefined) return;
-      this.accelerationX = event.acceleration.x;
-      this.accelerationY = event.acceleration.y;
-      this.accelerationZ = event.acceleration.z;
+      this.accelerationX = +(Math.round(event.acceleration.x + "e+2") + "e-2");
+      this.accelerationY = +(Math.round(event.acceleration.y + "e+2") + "e-2");
+      this.accelerationZ = +(Math.round(event.acceleration.z + "e+2") + "e-2");
     }
   }
 };

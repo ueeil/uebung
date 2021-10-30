@@ -1,8 +1,26 @@
 <template>
   <div style="font-family: monospace, monospace">
     <v-card outlined style="background-color: #f8f8f8">
-      <v-card-title style="margin-bottom: -16px">Time frame (20sec.)</v-card-title>
-      <v-card-text>hi</v-card-text>
+      <v-card-title style="margin-bottom: -16px">Run the model</v-card-title>
+      <v-card-text>
+        Current time frame is 1 seconds.
+        <br />
+        <v-switch
+          style="margin-left: 8px"
+          @change="executeNextTimer"
+          inset
+          :label="'Recoding Enabled: ' + currentlyRecoding"
+          hide-details
+          v-model="currentlyRecoding"
+        />
+      </v-card-text>
+
+      <v-card-title style="margin-bottom: -8px">Current Features</v-card-title>
+      <v-card-text>
+        Calculated features (min, max, median, std) for each values as an array.
+        <div style="height: 8px !important" />
+        {{ currentFeatures }}
+      </v-card-text>
     </v-card>
     <br />
 
@@ -83,126 +101,159 @@
     </v-card>
     <br />
     <v-card outlined style="background-color: #f8f8f8">
-      <v-card-title>Collect Data</v-card-title>
-
+      <v-card-title>Model execution</v-card-title>
       <v-card-text>
-        <v-text-field
-          style="background-color: #fff"
-          hide-details
-          outlined
-          v-model="currentHumanId"
-          label="Human Identifier"
-          dense
-        />
-        <br />
-        <v-select
-          style="background-color: #fff"
-          :items="['running', 'standing', 'walking']"
-          hide-details
-          v-model="currentActivity"
-          outlined
-          label="Activity Type"
-          dense
-        />
-        <v-switch
-          style="margin-left: 8px"
-          @change="executeNextTimer"
-          inset
-          :label="'Recoding Enabled: ' + currentlyRecoding"
-          hide-details
-          v-model="currentlyRecoding"
-          :disabled="currentActivity === '' || currentHumanId === ''"
-        />
-      </v-card-text>
-    </v-card>
-    <br />
-    <v-card outlined style="background-color: #f8f8f8">
-      <v-card-title>All collected Data</v-card-title>
-      <a ref="hiddenRef" />
-      <v-card-text>
-        <v-btn @click="exportData">Export data</v-btn>
-        <v-switch inset label="ShowCSV" hide-details="" v-model="showCSV" />
-        <v-textarea
-          style="background-color: #fff; margin-top: 16px"
-          v-if="showCSV"
-          outlined
-          label="CSV"
-          v-model="csvData"
-          readonly
-          hide-details=""
-        />
+        <div v-if="currentPrediction == -1">Not yet executed</div>
+        <div v-else-if="currentPrediction == 0">Class 0</div>
+        <div v-else-if="currentPrediction == 1">Class 1</div>
+        <div v-else-if="currentPrediction == 2">Class 2</div>
+        <div v-else>Unknown Class: {{ currentPrediction }}</div>
       </v-card-text>
     </v-card>
   </div>
 </template>
 
 <script>
+import execute from "./model";
+
 export default {
   data() {
     return {
+      model: null,
       alpha: 0,
       beta: 0,
       gamma: 0,
       accelerationX: 0,
       accelerationY: 0,
       accelerationZ: 0,
-      currentActivity: "",
       currentlyRecoding: false,
-      currentHumanId: "",
-      showCSV: false,
-      csvData: "activity,alpha,beta,gamma,stamp,x,y,z"
+      currentTimeframe: [[], [], [], [], [], []],
+      currentFeatures: [],
+      lastTimeframeTickTime: 0,
+      currentPrediction: -1
     };
   },
-  mounted() {
+  async mounted() {
     window.addEventListener("deviceorientation", this.handleAngleChange);
     window.addEventListener("devicemotion", this.handleGyroChange);
     console.log("events added");
+
+    // add median & std function to arrays
+    Array.prototype.median = function () {
+      return this.slice().sort((a, b) => a - b)[Math.floor(this.length / 2)];
+    };
+    Array.prototype.stanDeviate = function () {
+      var i,
+        j,
+        total = 0,
+        mean = 0,
+        diffSqredArr = [];
+      for (i = 0; i < this.length; i += 1) {
+        total += this[i];
+      }
+      mean = total / this.length;
+      for (j = 0; j < this.length; j += 1) {
+        diffSqredArr.push(Math.pow(this[j] - mean, 2));
+      }
+      return Math.sqrt(
+        diffSqredArr.reduce(function (firstEl, nextEl) {
+          return firstEl + nextEl;
+        }) / this.length
+      );
+    };
   },
   methods: {
-    exportData() {
-      var textToSave = this.csvData;
-      var hiddenElement = this.$refs.hiddenRef;
-      hiddenElement.href = "data:attachment/text," + encodeURI(textToSave);
-      hiddenElement.target = "_blank";
-      hiddenElement.download = "csvData.txt";
-      hiddenElement.click();
-    },
-    addItemToCSV() {
-      console.log("adding item");
+    generateFeatures() {
+      // this.alpha, this.beta, this.gamma, this.accelerationX, this.accelerationY, this.accelerationZ
+      // =>
+      // alpha_min	alpha_max	alpha_median	alpha_std	beta_min	beta_max	beta_median	beta_std ...
+      let arrayToReturn = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-      this.csvData += "\n";
-      this.csvData += this.currentActivity + ";";
-      this.csvData += this.alpha + ";";
-      this.csvData += this.beta + ";";
-      this.csvData += this.gamma + ";";
-      this.csvData += this.accelerationX + ";";
-      this.csvData += this.accelerationY + ";";
-      this.csvData += this.accelerationZ + ";";
-      this.csvData += new Date().getTime() + ";";
+      let i = 0;
+      for (let dataPoints of this.currentTimeframe) {
+        if (dataPoints.length === 0) return;
+
+        //console.log("dataPoints", dataPoints);
+        let min = Math.min.apply(Math, dataPoints);
+        let max = Math.max.apply(Math, dataPoints);
+        let median = arrayToReturn.median();
+        let std = arrayToReturn.stanDeviate();
+
+        arrayToReturn[0 + i] = min;
+        arrayToReturn[1 + i] = max;
+        arrayToReturn[2 + i] = median;
+        arrayToReturn[3 + i] = std;
+
+        i += 4;
+      }
+      this.currentFeatures = arrayToReturn;
+      return arrayToReturn;
+    },
+    addItemToTimeframe() {
+      // check if we collected 1000ms of data
+      let now = new Date().getTime();
+      if (now - this.lastTimeframeTickTime >= 500) {
+        // execute model
+        this.generateFeatures();
+        this.currentPrediction = execute([
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random(),
+          Math.random()
+        ]);
+        console.log("currentPrediction: " + this.currentPrediction);
+
+        // reset array & time for comparison
+        this.currentTimeframe = [[], [], [], [], [], []];
+        this.lastTimeframeTickTime = now;
+      } else {
+        this.currentTimeframe[0].push(this.alpha);
+        this.currentTimeframe[1].push(this.beta);
+        this.currentTimeframe[2].push(this.gamma);
+        this.currentTimeframe[3].push(this.accelerationX);
+        this.currentTimeframe[4].push(this.accelerationY);
+        this.currentTimeframe[5].push(this.accelerationZ);
+      }
     },
     executeNextTimer() {
       if (this.currentlyRecoding) {
         setTimeout(() => {
-          this.addItemToCSV();
+          //console.log("timer");
+          this.addItemToTimeframe();
           this.executeNextTimer();
         }, 10);
-      } else {
-        clearTimeout(this.timer);
       }
     },
     handleAngleChange(event) {
-      //console.log(event);
       if (event === undefined) return;
-      this.alpha = event.alpha;
-      this.beta = event.beta;
-      this.gamma = event.gamma;
+      this.alpha = +(Math.round(event.alpha + "e+2") + "e-2");
+      this.beta = +(Math.round(event.beta + "e+2") + "e-2");
+      this.gamma = +(Math.round(event.gamma + "e+2") + "e-2");
     },
     handleGyroChange(event) {
-      //console.log(event.acceleration);
       if (event === undefined || event.acceleration === undefined) return;
-      this.accelerationX = event.acceleration.x;
-      this.accelerationY = event.acceleration.y;
-      this.accelerationZ = event.acceleration.z;
+      this.accelerationX = +(Math.round(event.acceleration.x + "e+2") + "e-2");
+      this.accelerationY = +(Math.round(event.acceleration.y + "e+2") + "e-2");
+      this.accelerationZ = +(Math.round(event.acceleration.z + "e+2") + "e-2");
     }
   }
 };
