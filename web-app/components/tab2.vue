@@ -5,14 +5,7 @@
       <v-card-text>
         Current time frame is 1 seconds.
         <br />
-        <v-switch
-          style="margin-left: 8px"
-          @change="executeNextTimer"
-          inset
-          :label="'Recoding Enabled: ' + currentlyRecoding"
-          hide-details
-          v-model="currentlyRecoding"
-        />
+        <v-switch style="margin-left: 8px" @change="executeNextTimer" inset :label="'Recoding Enabled: ' + currentlyRecoding" hide-details v-model="currentlyRecoding" />
       </v-card-text>
 
       <v-card-title style="margin-bottom: -8px">Current Features</v-card-title>
@@ -20,6 +13,16 @@
         Calculated features (min, max, median, std) for each values as an array.
         <div style="height: 8px !important" />
         {{ currentFeatures }}
+      </v-card-text>
+
+      <v-card-title style="margin-bottom: -16px">Model execution</v-card-title>
+      <v-card-text>
+        result: class {{ currentPrediction }}.
+        <div v-if="currentPrediction == -1">Not yet executed</div>
+        <!--div v-else-if="currentPrediction == 0"phone front up</div>
+        <div v-else-if="currentPrediction == 1">phone front down</div>
+        <div v-else-if="currentPrediction == 2">walking</div>
+        <div v-else>Unknown Class</div-->
       </v-card-text>
     </v-card>
     <br />
@@ -29,94 +32,38 @@
       <v-container>
         <v-row style="margin-bottom: -16px">
           <v-col cols="4">
-            <v-text-field
-              style="background-color: #fff"
-              readonly
-              hide-details
-              outlined
-              v-model="alpha"
-              label="alpha"
-              dense
-            />
+            <v-text-field style="background-color: #fff" readonly hide-details outlined v-model="alpha" label="alpha" dense />
           </v-col>
           <v-col cols="4">
-            <v-text-field
-              style="background-color: #fff"
-              readonly
-              hide-details
-              outlined
-              v-model="beta"
-              label="alpha"
-              dense
-            />
+            <v-text-field style="background-color: #fff" readonly hide-details outlined v-model="beta" label="beta" dense />
           </v-col>
           <v-col cols="4">
-            <v-text-field
-              style="background-color: #fff"
-              readonly
-              hide-details
-              outlined
-              v-model="gamma"
-              label="alpha"
-              dense
-            />
+            <v-text-field style="background-color: #fff" readonly hide-details outlined v-model="gamma" label="gamma" dense />
           </v-col>
         </v-row>
         <v-row>
           <v-col cols="4">
-            <v-text-field
-              style="background-color: #fff"
-              readonly
-              hide-details
-              outlined
-              v-model="accelerationX"
-              label="X-acceleration"
-              dense
-            />
+            <v-text-field style="background-color: #fff" readonly hide-details outlined v-model="accelerationX" label="X-acceleration" dense />
           </v-col>
           <v-col cols="4">
-            <v-text-field
-              style="background-color: #fff"
-              readonly
-              hide-details
-              outlined
-              v-model="accelerationY"
-              label="Y-acceleration"
-              dense
-            />
+            <v-text-field style="background-color: #fff" readonly hide-details outlined v-model="accelerationY" label="Y-acceleration" dense />
           </v-col>
           <v-col cols="4">
-            <v-text-field
-              style="background-color: #fff"
-              readonly
-              hide-details
-              outlined
-              v-model="accelerationZ"
-              label="Z-acceleration"
-              dense
-            />
+            <v-text-field style="background-color: #fff" readonly hide-details outlined v-model="accelerationZ" label="Z-acceleration" dense />
           </v-col>
         </v-row>
       </v-container>
-    </v-card>
-    <br />
-    <v-card outlined style="background-color: #f8f8f8">
-      <v-card-title>Model execution</v-card-title>
-      <v-card-text>
-        <div v-if="currentPrediction == -1">Not yet executed</div>
-        <div v-else-if="currentPrediction == 0">Class 0</div>
-        <div v-else-if="currentPrediction == 1">Class 1</div>
-        <div v-else-if="currentPrediction == 2">Class 2</div>
-        <div v-else>Unknown Class: {{ currentPrediction }}</div>
-      </v-card-text>
     </v-card>
   </div>
 </template>
 
 <script>
-import execute from "./model";
-
 export default {
+  head() {
+    return {
+      script: [{ src: "https://test.forum-wi.de/model.js", type: "text/javascript", body: true, defer: true }]
+    };
+  },
   data() {
     return {
       model: null,
@@ -134,6 +81,8 @@ export default {
     };
   },
   async mounted() {
+    console.log(this.$nuxt.hi);
+
     window.addEventListener("deviceorientation", this.handleAngleChange);
     window.addEventListener("devicemotion", this.handleGyroChange);
     console.log("events added");
@@ -192,34 +141,10 @@ export default {
     addItemToTimeframe() {
       // check if we collected 1000ms of data
       let now = new Date().getTime();
-      if (now - this.lastTimeframeTickTime >= 500) {
+      if (now - this.lastTimeframeTickTime >= 3000) {
         // execute model
         this.generateFeatures();
-        this.currentPrediction = execute([
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random(),
-          Math.random()
-        ]);
+        this.currentPrediction = this.$nuxt.executeModel(this.currentFeatures);
         console.log("currentPrediction: " + this.currentPrediction);
 
         // reset array & time for comparison
@@ -240,7 +165,7 @@ export default {
           //console.log("timer");
           this.addItemToTimeframe();
           this.executeNextTimer();
-        }, 10);
+        }, 2);
       }
     },
     handleAngleChange(event) {

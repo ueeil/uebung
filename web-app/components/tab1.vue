@@ -144,8 +144,8 @@ export default {
       currentlyRecoding: false,
       currentHumanId: "",
       showCSV: false,
-      csvData: "activity,alpha,beta,gamma,stamp,x,y,z",
-      possibleActivities: ["tableUp", "tableDown", "hands", "walking"]
+      csvData: "activity;sampleId;stamp;alpha;beta;gamma;x;y;z",
+      possibleActivities: ["sit", "stand", "walk", "table", "other"]
     };
   },
   mounted() {
@@ -174,14 +174,14 @@ export default {
       this.csvData += this.gamma + ";";
       this.csvData += this.accelerationX + ";";
       this.csvData += this.accelerationY + ";";
-      this.csvData += this.accelerationZ + ";";
+      this.csvData += this.accelerationZ + "";
     },
     executeNextTimer() {
       if (this.currentlyRecoding) {
         setTimeout(() => {
           this.addItemToCSV();
           this.executeNextTimer();
-        }, 10);
+        }, 2);
       } else {
         clearTimeout(this.timer);
       }

@@ -5,8 +5,8 @@
       <template v-slot:extension>
         <v-tabs size="1" v-model="tab" fixed-tabs>
           <v-tab value="0">Collect Data</v-tab>
-          <v-tab value="1">Run Model</v-tab>
-          <!--v-tab value="2">tab 3</v-tab-->
+          <v-tab value="1">Test Model</v-tab>
+          <v-tab value="2">Run Model</v-tab>
         </v-tabs>
       </template>
     </v-app-bar>
@@ -19,9 +19,9 @@
         <v-tab-item>
           <tab-2 />
         </v-tab-item>
-        <!--v-tab-item>
+        <v-tab-item>
           <tab-3 />
-        </v-tab-item-->
+        </v-tab-item>
       </v-tabs-items>
     </div>
   </div>
