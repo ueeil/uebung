@@ -28,7 +28,7 @@
 export default {
   head() {
     return {
-      script: [{ src: "https://test.forum-wi.de/model.js", type: "text/javascript", body: true, defer: true }]
+      script: [{ src: "http://localhost/model.js", type: "text/javascript", body: true, defer: true }]
     };
   },
   data() {
