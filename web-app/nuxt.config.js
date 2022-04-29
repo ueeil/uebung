@@ -8,7 +8,7 @@ export default {
   target: 'static',
 
   router: {
-    base: 'https://github.com/ueeil/uebung/'
+    base: '/uebung/'
   },
 
   // Global page headers: https://go.nuxtjs.dev/config-head
