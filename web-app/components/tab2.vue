@@ -61,7 +61,7 @@
 export default {
   head() {
     return {
-      script: [{ src: 'https://ueeil.github.io/uebung/model.js' }] //type: "text/javascript", body: true, defer: true
+      script: [{ src: 'https://ueeil.github.io/uebung/model.js', type: "text/javascript", body: true, defer: true }]
     };
   },
   data() {
