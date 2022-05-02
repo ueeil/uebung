@@ -144,7 +144,7 @@ export default {
       if (now - this.lastTimeframeTickTime >= 3000) {
         // execute model
         this.generateFeatures();
-        this.currentPrediction = this.$nuxt.executeModel(this.currentFeatures);
+        this.currentPrediction = this.$nuxt.execute(this.currentFeatures);
         console.log("currentPrediction: " + this.currentPrediction);
 
         // reset array & time for comparison
